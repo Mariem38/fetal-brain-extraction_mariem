@@ -76,7 +76,7 @@ In this study, our dataset comprises fetal MRI data obtained over a span of appr
 
 The MRI acquisition protocols included the acquisition of multiple types of images, such as T2-weighted (T2W) 2D sequences with in-plane resolutions ranging from 1 to 1.25 mm, diffusion-weighted imaging (DWI) with an in-plane resolution of 2 mm, and functional MRI (fMRI) images with an isotropic resolution of 2-3 mm.
 
-The datasets presented in this study will be made available upon reasonable request to the corresponding author. Please direct any requests for dataset access to "razieh.faghihpirayesh@childrens.harvard.edu" via email.
+Fully anonymized (de-identified) datasets presented in this study will be made available upon reasonable request. Please direct any requests for dataset access to "ali.gholipour@uci.edu".
 
 ## Disclaimer
 This software and any included data were developed for research purposes and are not intended for medical or diagnostic use and have no warranty. The authors and distributors do not make any guarantees regarding the accuracy or usefulness of results generated from these tools or their derivatives, and are not liable for any damages resulting from their use.
