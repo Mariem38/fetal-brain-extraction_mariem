@@ -34,6 +34,12 @@ def train(args):
     train_dataloader, val_dataloader = fetal_data.load_data()
 
     model = get_network(configs)
+
+    if configs.get("pretrained_path"):
+        sd = torch.load(configs["pretrained_path"], map_location="cpu")
+        sd = {k.removeprefix("module."): v for k, v in sd.items()}
+        model.load_state_dict(sd, strict=True)
+        logging.info(f"loaded pretrained weights from {configs['pretrained_path']}")
     device = args.device
     if args.n_gpu > 1:
         model = torch.nn.DataParallel(model)
