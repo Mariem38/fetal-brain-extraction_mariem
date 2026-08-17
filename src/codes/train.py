@@ -12,6 +12,7 @@ from monai.losses import DiceCELoss
 from monai.metrics import DiceMetric
 from monai.transforms import AsDiscrete, Compose
 from torch.optim import SGD
+from tqdm import tqdm
 
 from data_generator_monai import FetalTrainData
 from model_zoo import get_network
@@ -93,9 +94,12 @@ def train(args):
         print("-" * 20)
         print(f"epoch {epoch + 1}/{max_epochs}")
         model.train()
+        epoch_start = time.time()
         epoch_loss = 0
         step = 0
-        for batch_data in train_dataloader:
+        for i, batch_data in enumerate(tqdm(train_dataloader,
+                                            desc=f"epoch {epoch + 1}/{max_epochs}",
+                                            leave=False, mininterval=10.0)):
             step += 1
             inputs, labels = (batch_data["image"].to(device),
                               batch_data["label"].to(device),
@@ -107,7 +111,10 @@ def train(args):
             loss.backward()
             optimizer.step()
             epoch_loss += loss.item()
-            # print(f"{step}/{len(train_ds) // train_loader.batch_size}, " f"train_loss: {loss.item():.4f}")
+
+            if (i + 1) % 500 == 0:
+                print(f"  epoch {epoch + 1}  batch {i + 1}/{len(train_dataloader)}  "
+                      f"loss {loss.item():.4f}", flush=True)
 
         epoch_loss /= step
         epoch_loss_values.append(epoch_loss)
@@ -151,6 +158,10 @@ def train(args):
                     torch.save(model.state_dict(), save_mode_path)
                     logging.info(f"saved model at current epoch: {epoch + 1}, current best mean dice: {metric:.4f}"
                                  f" at epoch: {best_metric_epoch}")
+
+        epoch_secs = time.time() - epoch_start
+        logging.info(f"epoch {epoch + 1} took {epoch_secs:.1f}s, "
+                     f"est. {(max_epochs - epoch - 1) * epoch_secs / 3600:.1f}h remaining")
 
     train_time = time.time() - step_start
     logging.info(f"train completed in {train_time:.4f} seconds "  f"best_metric: {best_metric:.4f} "
