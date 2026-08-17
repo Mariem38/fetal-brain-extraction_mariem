@@ -1,4 +1,5 @@
 model_name: "AttUNet"
+pretrained_path: "../saved_models/AttUNet.pth"
 
 train_data_type: "path"
 train_data_paths: '../../datasets/train_t2d'
