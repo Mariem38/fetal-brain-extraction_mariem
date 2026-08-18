@@ -237,7 +237,7 @@ class FetalTrainData:
             train_dataloader = DataLoader(train_dataset,
                                           batch_size=self.config["batch_size"],
                                           shuffle=True,
-                                          num_workers=2, #8 modify
+                                          num_workers=6, #8 modify
                                           pin_memory=False)
 
             val_dataset = Dataset(data=val_files,
