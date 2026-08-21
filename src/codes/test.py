@@ -8,6 +8,7 @@ import yaml
 import argparse
 import matplotlib
 import numpy as np
+import scipy.ndimage as ndi
 
 import torch
 
@@ -22,6 +23,33 @@ from monai.utils import first, set_determinism
 
 from data_generator_monai import FetalTestData
 from model_zoo import get_network
+
+
+def component_scores(pred_chw, slice_axis=2):
+    """Per-slice fragmentation of one prediction. Input is channel-first (C, X, Y, Z).
+
+    Measured on the RAW prediction, before any cleanup.
+
+
+    """
+    m = np.asarray(pred_chw.detach().cpu())[0] > 0
+
+    st2 = ndi.generate_binary_structure(2, 2)   # 8-connected in-plane
+    n_comp_2d = max_comp = n_multi = n_fg = 0
+    for k in range(m.shape[slice_axis]):
+        sl = np.take(m, k, axis=slice_axis)
+        if not sl.any():
+            continue
+        n_fg += 1
+        _, c = ndi.label(sl, structure=st2)
+        n_comp_2d += c
+        max_comp = max(max_comp, c)
+        if c > 1:
+            n_multi += 1
+
+    return dict(n_comp_2d=n_comp_2d, max_comp_slice=max_comp,
+                n_slices_multi=n_multi, n_slices_fg=n_fg,
+                frac_slices_multi=n_multi / n_fg if n_fg else float("nan"))
 
 
 def plot_images(images, masks, gt=None,
@@ -123,9 +151,17 @@ def test(args):
         reduction="mean",
         ignore_empty=False
     )
+    cm_metric = ConfusionMatrixMetric(
+        include_background=configs["include_background"],
+        metric_name=["sensitivity", "specificity", "precision", "f1 score"],
+        compute_sample=True,   # per-volume rates, then averaged; the block below pools voxels instead
+        reduction="mean"
+    )
 
     test_time = []
     subj_list = []
+    vol_list = []
+    comp_list = []
     mask_list = []
     data_type = []
     if configs["test_augmentation"]:
@@ -163,6 +199,7 @@ def test(args):
                 unmodified_data = tr.LoadImaged(keys=["image", "label"])(file)
                 dice = dice_metric(y_pred=tta_output_mean[None, ...], y=unmodified_data["label"][None, None, ...])
                 iou = iou_metric(y_pred=tta_output_mean[None, ...], y=unmodified_data["label"][None, None, ...])
+                cm = cm_metric(y_pred=tta_output_mean[None, ...], y=unmodified_data["label"][None, None, ...])
 
     else:
         post_transforms_list = [
@@ -208,8 +245,30 @@ def test(args):
 
                 test_time.append((time.time() - start_time) / test_inputs.shape[-1])
 
-                dice = dice_metric(y_pred=from_engine(["pred"])(test_data), y=test_labels)
-                iou = iou_metric(y_pred=from_engine(["pred"])(test_data), y=test_labels)
+                test_outputs = from_engine(["pred"])(test_data)
+
+                if test_outputs[0].ndim == 4:
+                    comp_list.append(component_scores(test_outputs[0]))
+                else:
+                    logging.info(f"component scores skipped: expected (C, X, Y, Z), "
+                                 f"got {tuple(test_outputs[0].shape)}")
+                    comp_list.append(dict(n_comp_2d=float("nan"),
+                                          max_comp_slice=float("nan"),
+                                          n_slices_multi=float("nan"),
+                                          n_slices_fg=float("nan"),
+                                          frac_slices_multi=float("nan")))
+
+                dice = dice_metric(y_pred=test_outputs, y=test_labels)
+                iou = iou_metric(y_pred=test_outputs, y=test_labels)
+                cm = cm_metric(y_pred=test_outputs, y=test_labels)
+
+                tp, fp, tn, fn = (int(v) for v in cm[0, 0].tolist())
+                logging.info(f"confusion matrix tp={tp} fp={fp} tn={tn} fn={fn}")
+
+                # outside the modality branches: an empty vol_list would silently
+                # zero out the zip below and write a rowless csv
+                vol_list.append(os.path.basename(
+                    test_inputs.meta["filename_or_obj"][0]).replace(".nii.gz", ""))
 
                 if configs["modality"] == "T2W" or configs["modality"] == "otherscanners":
                     subject_id = os.path.basename(os.path.dirname(test_inputs.meta["filename_or_obj"][0]))
@@ -218,6 +277,12 @@ def test(args):
                     subj_list.append(subject_id)
                     data_type.append(os.path.basename(os.path.dirname(os.path.dirname(
                         test_inputs.meta["filename_or_obj"][0]))))
+
+                elif configs["modality"] in ("lowfield", "highfield"):
+                    # BIDS layout: the parent dir is "anat", so parse the filename
+                    fname = os.path.basename(test_inputs.meta["filename_or_obj"][0])
+                    subj_list.append(fname.split('_')[0])
+                    data_type.append(configs["modality"])
 
                 elif configs["modality"] == "DWI":
                     subject_id = os.path.basename(test_inputs.meta["filename_or_obj"][0]).split('_')[0]
@@ -238,8 +303,7 @@ def test(args):
 
                 if configs["plot_results"]:
                     if dice.item() < 0.85:
-                        test_output = from_engine(["pred"])(test_data)
-                        original_image = tr.LoadImage()(test_output[0].meta["filename_or_obj"])[0]
+                        original_image = tr.LoadImage()(test_outputs[0].meta["filename_or_obj"])[0]
                         original_label = tr.LoadImage()(test_labels[0].meta["filename_or_obj"])[0]
 
                         filename_without_extension = os.path.splitext(os.path.basename
@@ -255,7 +319,7 @@ def test(args):
 
                         plot_images(
                             original_image,
-                            test_output[0].detach().cpu()[0],
+                            test_outputs[0].detach().cpu()[0],
                             gt=original_label,
                             volume_dice=dice.item(),
                             mean_slice_dice=None,
@@ -268,13 +332,23 @@ def test(args):
                         print(iou.item())
 
     if configs["save_metrics"]:
-        header = ["Method", "Modality", "Type", "Subject", "Dice", "IoU"]
+        header = ["Method", "Modality", "Type", "Subject", "Volume", "Dice", "IoU",
+                  "n_comp_2d", "max_comp_slice", "n_slices_multi", "n_slices_fg",
+                  "frac_slices_multi"]
         dice_list = (dice_metric.get_buffer().detach().cpu().numpy()[:, 0]).tolist()
         iou_list = (iou_metric.get_buffer().detach().cpu().numpy()[:, 0]).tolist()
         modality = [configs["modality"]] * len(dice_list)
         method = [os.path.splitext(os.path.basename(configs["saved_model_path"]))[0]] * len(dice_list)
 
-        data = list(zip(method, modality, data_type, subj_list, dice_list, iou_list))
+        # a silent length mismatch here would misalign every row
+        assert len(comp_list) == len(dice_list), \
+            f"comp_list has {len(comp_list)} entries but dice_list has {len(dice_list)}"
+        data = list(zip(method, modality, data_type, subj_list, vol_list, dice_list, iou_list,
+                        [c["n_comp_2d"] for c in comp_list],
+                        [c["max_comp_slice"] for c in comp_list],
+                        [c["n_slices_multi"] for c in comp_list],
+                        [c["n_slices_fg"] for c in comp_list],
+                        [c["frac_slices_multi"] for c in comp_list]))
 
         file_path = os.path.join(configs["save_path"], configs["modality"] + "_" + method[0] + ".csv")
         df = pd.DataFrame(data, columns=header)
@@ -289,11 +363,39 @@ def test(args):
     logging.info(f"evaluation metric dice: {dice_metric.aggregate()}")
     logging.info(f"evaluation metric iou: {iou_metric.aggregate()}")
 
+    if comp_list:
+        fracs = np.array([c["frac_slices_multi"] for c in comp_list], dtype=float)
+        n_any = sum(1 for c in comp_list if c["n_slices_multi"] > 0)
+        # a single fragmented slice trips the raw count, so the fraction is the meaningful threshold
+        logging.info(f"stacks with a fragmented slice: {n_any} / {len(comp_list)}")
+        logging.info(f"stacks with frac_slices_multi > 0.05: {int((fracs > 0.05).sum())} / {len(comp_list)}")
+        logging.info(f"frac_slices_multi mean: {np.nanmean(fracs)}")
+        logging.info(f"frac_slices_multi std: {np.nanstd(fracs)}")
+        logging.info(f"worst slice component count: {np.nanmax([c['max_comp_slice'] for c in comp_list])}")
+
+    # buffer is [N, C, 4] holding tp, fp, tn, fn per volume
+    cm_buffer = cm_metric.get_buffer().detach().cpu().numpy()
+    tp, fp, tn, fn = cm_buffer[:, 0, :].sum(axis=0)
+
+    logging.info(f"confusion matrix summed over {cm_buffer.shape[0]} volumes (foreground = brain):")
+    logging.info(f"{'':>10}{'pred bg':>18}{'pred fg':>18}")
+    logging.info(f"{'true bg':>10}{int(tn):>18d}{int(fp):>18d}")
+    logging.info(f"{'true fg':>10}{int(fn):>18d}{int(tp):>18d}")
+
+    logging.info(f"voxel-weighted sensitivity: {tp / (tp + fn)}")
+    logging.info(f"voxel-weighted specificity: {tn / (tn + fp)}")
+    logging.info(f"voxel-weighted precision: {tp / (tp + fp)}")
+    logging.info(f"voxel-weighted f1 score: {2 * tp / (2 * tp + fp + fn)}")
+
+    for name, value in zip(["sensitivity", "specificity", "precision", "f1 score"], cm_metric.aggregate()):
+        logging.info(f"per-volume mean {name}: {value.item()}")
+
     logging.info(f"latency mean: {np.mean(test_time[1:])}")
     logging.info(f"latency std: {np.std(test_time[1:])}")
 
     dice_metric.reset()
     iou_metric.reset()
+    cm_metric.reset()
 
 
 if __name__ == '__main__':
