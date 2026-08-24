@@ -28,24 +28,21 @@ from model_zoo import get_network
 def component_scores(pred_chw, slice_axis=2):
     """Per-slice fragmentation of one prediction. Input is channel-first (C, X, Y, Z).
 
-    Measured on the RAW prediction, before any cleanup.
-
-
     """
     m = np.asarray(pred_chw.detach().cpu())[0] > 0
 
     st2 = ndi.generate_binary_structure(2, 2)   # 8-connected in-plane
     n_comp_2d = max_comp = n_multi = n_fg = 0
     for k in range(m.shape[slice_axis]):
-        sl = np.take(m, k, axis=slice_axis)
+        sl = np.take(m, k, axis=slice_axis) #slice k along the stack axis
         if not sl.any():
             continue
-        n_fg += 1
+        n_fg += 1 #slice with any prediction
         _, c = ndi.label(sl, structure=st2)
-        n_comp_2d += c
+        n_comp_2d +=c #total blobs over one slice
         max_comp = max(max_comp, c)
         if c > 1:
-            n_multi += 1
+            n_multi += 1   #n of slices with more than 1 blob
 
     return dict(n_comp_2d=n_comp_2d, max_comp_slice=max_comp,
                 n_slices_multi=n_multi, n_slices_fg=n_fg,
