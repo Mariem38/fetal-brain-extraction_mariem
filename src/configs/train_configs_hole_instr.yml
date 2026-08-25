@@ -1,0 +1,30 @@
+# lambda = 0 instrumentation run, 30 epochs continuing from v3 best (epoch 70).
+# actually train in. Continues from v3's best checkpoint (epoch 70, dice 0.9473)
+# rather than from scratch, so frac_correct is measured on converged masks.
+# The loss is bit-identical to a plain continuation -- hole_lambda 0.0 never
+# touches it.
+model_name: "AttUNet"
+pretrained_path: "/media/mial/HDD2TB/fetbet_train/baseline_sim_v3/AttUNet_checkpoint-70.pth"
+
+train_data_type: "path"
+train_data_paths: '/media/mial/HDD2TB/fetbet_data/train'
+validation_data_type: "path"
+val_data_paths: '/media/mial/HDD2TB/fetbet_data/val'
+validation_data_paths: '/media/mial/HDD2TB/fetbet_data/val'
+
+augmentation: True
+fast_training: False
+batch_size: 8
+img_size: 256
+max_epochs: 30
+classes_num: 2
+val_interval: 2
+include_background: False
+optimizer: "Adam"
+learning_rate: 0.00001
+save_path: "/media/mial/HDD2TB/fetbet_train/hole_instr_lam0/"
+
+use_wandb: True
+wandb_project: "fetal-brain-extraction"
+wandb_entity:
+wandb_run_name: "hole_instr_lam0_from_v3ep70"

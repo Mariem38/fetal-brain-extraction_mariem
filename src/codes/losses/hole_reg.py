@@ -4,11 +4,8 @@ Prior: a fetal brain mask has no interior holes. The model occasionally predicts
 small enclosed background pockets inside the brain. We penalise them with a
 differentiable term whose *targets* are picked by a non-differentiable flood fill
 (``scipy.ndimage.binary_fill_holes``) run under ``no_grad`` on detached
-probabilities. Gradient flows only through the probabilities; the selector is a
-constant 0/1 mask. Same pattern as hard-negative mining.
+probabilities.
 
-Sign: the penalty pushes probabilities UP on the selected voxels
-(``(1 - p) * s``), the opposite of a false-positive suppression term.
 """
 
 import numpy as np
@@ -17,23 +14,24 @@ from scipy import ndimage
 
 CONN8 = ndimage.generate_binary_structure(2, 2)
 
+# (lo, hi, label) in voxels; hi=None is open-ended. Component-level, not slice-level.
+SIZE_BINS = ((1, 1, "1"), (2, 2, "2"), (3, 4, "3-4"), (5, 8, "5-8"),
+             (9, 16, "9-16"), (17, 32, "17-32"), (33, None, "33+"))
+
+
+def _size_bin(n):
+    for i, (lo, hi, _) in enumerate(SIZE_BINS):
+        if n >= lo and (hi is None or n <= hi):
+            return i
+    return len(SIZE_BINS) - 1
+
 
 def _holes_for_mask(m, max_hole_abs=200, max_hole_rel=0.05, close_iters=0,
                     min_depth_vox=2.0):
     """Enclosed-hole mask for one 2D hard mask ``m`` (bool HxW).
 
     Returns a bool array of the same shape holding the hole components that are
-    small enough to be treated as speckle. Empty array (all False) when there is
-    nothing to fill. Large enclosed regions are dropped: they may be
-    ventricles / CSF that the GT legitimately excludes, so the cutoff is a
-    MAXIMUM, not a minimum.
-
-    With ``close_iters > 0`` the mask is first sealed by a binary closing so that
-    pockets whose outer wall has a thin break are still found; the depth filter
-    then drops pixels that sit less than ``min_depth_vox`` inside the blob.
-    Note that in that mode the selection is NOT guaranteed to stay inside
-    ``binary_fill_holes(m)`` -- sealing a broken wall is exactly the case where
-    a genuine pocket lies outside the mask's own filled hull.
+    small enough to be treated as speckle. 
     """
     if m.sum() == 0:
         return np.zeros(m.shape, dtype=bool)
@@ -124,16 +122,27 @@ class HoleStats:
         self.fire_slices = 0      # ... of which the selector was non-empty
         self.sel_px = 0.0         # total selected pixels
         self.correct_px = 0.0     # ... of which GT says brain
-        self.leak_slices = 0      # holes only visible after closing(iters=3)
+        self.leak_seen = 0        # slices on which leak was actually evaluated
+        self.leak_slices = 0      # ... of which holes only appear after closing(3)
         self.penalty_sum = 0.0
         self.penalty_n = 0
+        n = len(SIZE_BINS)
+        self.bin_comps = [0] * n      # hole components per size bin
+        self.bin_px = [0] * n         # their pixels
+        self.bin_correct = [0] * n    # ... of which GT says brain
 
     @torch.no_grad()
-    def update(self, prob, label, selector, penalty_value=None,
+    def update(self, prob, label, selector, penalty_value=None, compute_leak=True,
                thr=0.5, max_hole_abs=200, max_hole_rel=0.05, close_iters=0,
                min_depth_vox=2.0):
         """``prob``/``label``/``selector``: (B, 1, H, W). ``selector`` must have
-        been built from ``prob`` with the same kwargs."""
+        been built from ``prob`` with the same kwargs.
+
+        ``compute_leak`` gates the leak diagnostic only. It is the expensive
+        part -- a closing plus a distance transform that runs precisely when no
+        holes were found, i.e. on almost every slice -- so callers subsample it.
+        The other three statistics are always accumulated.
+        """
         sel = selector.detach().cpu().numpy()[:, 0].astype(bool)
         hard = (prob.detach() > thr).cpu().numpy()[:, 0]
         gt = (label.detach() > 0.5).cpu().numpy()
@@ -155,6 +164,21 @@ class HoleStats:
                 self.sel_px += n_sel
                 self.correct_px += float((sel[b] & gt[b]).sum())
 
+                # per-component sizes, so frac_correct can be read per size bin
+                lab, ncomp = ndimage.label(sel[b], CONN8)
+                if ncomp:
+                    flat = lab.ravel()
+                    sizes = np.bincount(flat, minlength=ncomp + 1)[1:]
+                    corr = np.bincount(flat[gt[b].ravel()], minlength=ncomp + 1)[1:]
+                    for c in range(ncomp):
+                        k = _size_bin(int(sizes[c]))
+                        self.bin_comps[k] += 1
+                        self.bin_px[k] += int(sizes[c])
+                        self.bin_correct[k] += int(corr[c])
+
+            if not compute_leak:
+                continue
+            self.leak_seen += 1
             # leak: nothing enclosed as-is, but a closing seals a broken wall
             holes0 = sel[b] if close_iters == 0 else _holes_for_mask(
                 m, close_iters=0, **kw)
@@ -180,8 +204,36 @@ class HoleStats:
                                   if self.fire_slices else 0.0),
             "hole/frac_correct": (self.correct_px / self.sel_px
                                   if self.sel_px else float("nan")),
-            "hole/leak_rate": (self.leak_slices / self.slices
-                               if self.slices else 0.0),
+            "hole/leak_rate": (self.leak_slices / self.leak_seen
+                               if self.leak_seen else float("nan")),
             "hole/penalty_value": (self.penalty_sum / self.penalty_n
                                    if self.penalty_n else 0.0),
         }
+
+    def size_report(self):
+        """Per-size-bin component counts and frac_correct, as log lines.
+
+        This is the breakdown that decides whether a min_hole_abs floor would
+        rescue the prior: if the small bins are mostly wrong and the large ones
+        mostly right, the floor is readable straight off this table.
+        """
+        total = sum(self.bin_comps)
+        if not total:
+            return ["  hole sizes: no components selected this epoch"]
+        lines = ["  hole size histogram (components / px / frac_correct):"]
+        for i, (_, _, name) in enumerate(SIZE_BINS):
+            c, px, cor = self.bin_comps[i], self.bin_px[i], self.bin_correct[i]
+            fc = f"{cor / px:.3f}" if px else "  -  "
+            bar = "#" * int(40 * c / max(self.bin_comps))
+            lines.append(f"    {name:>6}vox  n={c:6d} ({100*c/total:5.1f}%)  "
+                         f"px={px:7d}  frac_correct={fc}  {bar}")
+        return lines
+
+    def size_summary(self):
+        """Flat scalars for wandb: component count and frac_correct per bin."""
+        out = {}
+        for i, (_, _, name) in enumerate(SIZE_BINS):
+            out[f"hole/size_n_{name}"] = self.bin_comps[i]
+            if self.bin_px[i]:
+                out[f"hole/frac_correct_{name}"] = self.bin_correct[i] / self.bin_px[i]
+        return out

@@ -1,0 +1,33 @@
+# v4: 30-epoch continuation of v3 from epoch 70, lambda=0 (instrumentation only).
+model_name: "AttUNet"
+pretrained_path: "/media/mial/HDD2TB/fetbet_train/baseline_sim_v3/AttUNet_checkpoint-70.pth"
+
+train_data_type: "path"
+train_data_paths: '/media/mial/HDD2TB/fetbet_data/train'
+validation_data_type: "path"
+val_data_paths: '/media/mial/HDD2TB/fetbet_data/val'
+validation_data_paths: '/media/mial/HDD2TB/fetbet_data/val'
+
+# per-echo validation breakout (no `field` column exists -- see notes)
+val_manifest: '/media/mial/HDD2TB/fetbet_data/manifest_val.csv'
+# reference point for the manual stopping rule
+baseline_val_csv: '/media/mial/HDD2TB/fetbet_train/baseline_sim_v3/val_metrics.csv'
+baseline_epoch: 70
+
+augmentation: True
+fast_training: False        # True needs ~69 GB of RAM; this box has 62 GB
+batch_size: 8
+img_size: 256
+max_epochs: 30
+classes_num: 2
+val_interval: 1             # validate EVERY epoch, decoupled from checkpointing
+save_every: 5
+include_background: False
+optimizer: "Adam"
+learning_rate: 0.00001
+save_path: "/media/mial/HDD2TB/fetbet_train/v4_hole_lam0/"
+
+use_wandb: True
+wandb_project: "fetal-brain-extraction"
+wandb_entity:
+wandb_run_name: "v4_hole_lam0_from_v3ep70"

@@ -1,8 +1,10 @@
 import argparse
+import csv
 import logging
 import os
 import sys
 import time
+from collections import defaultdict
 
 import torch
 import wandb
@@ -42,6 +44,39 @@ def _foreground_logit(outputs):
     is exact and the gradient still reaches both channels.
     """
     return outputs[:, 1:2] - outputs[:, 0:1]
+
+
+def _load_val_groups(configs):
+    """Per-sample grouping keys for the validation set, from the manifest.
+
+    Returns (keys, label_cols, extra) where keys[i] is the group of validation
+    sample i in sorted-filename order. The val loader is batch_size=1, unshuffled
+    and globs img_*.nii.gz sorted, which matches manifest row order; the caller
+    checks the lengths agree before trusting it.
+    """
+    path = configs.get("val_manifest")
+    if not path or not os.path.exists(path):
+        return None, None, None
+    with open(path) as f:
+        rows = list(csv.DictReader(f))
+    cols = [c for c in ("field", "echo") if c and c in rows[0]]
+    if not cols:
+        return None, None, None
+    keys = [tuple(r[c] for c in cols) for r in rows]
+    extra = [r.get("te_ms", "") for r in rows]
+    return keys, cols, extra
+
+
+def _baseline_dice(configs):
+    """Val dice of the checkpoint we are resuming from, for the stopping rule."""
+    path, ep = configs.get("baseline_val_csv"), configs.get("baseline_epoch")
+    if not path or not ep or not os.path.exists(path):
+        return None
+    with open(path) as f:
+        for r in csv.DictReader(f):
+            if int(r["epoch"]) == int(ep):
+                return float(r["mean_dice"])
+    return None
 
 
 def train(args):
@@ -114,8 +149,9 @@ def train(args):
                              ignore_empty=False)
 
     img_size = configs["img_size"]
-    max_epochs = configs["max_epochs"]
+    max_epochs = args.max_epochs or configs["max_epochs"]
     val_interval = configs["val_interval"]
+    save_every = args.save_every or configs.get("save_every", 10)
     best_metric = -1
     best_metric_epoch = -1
     epoch_loss_values = []
@@ -123,10 +159,27 @@ def train(args):
     post_pred = Compose([AsDiscrete(argmax=True, to_onehot=configs["classes_num"])])
     post_label = Compose([AsDiscrete(to_onehot=configs["classes_num"])])
 
+    val_group_keys, val_group_cols, val_group_extra = _load_val_groups(configs)
+    if val_group_keys:
+        logging.info(f"val grouping on {val_group_cols} from {configs['val_manifest']}: "
+                     f"{len(set(val_group_keys))} groups over {len(val_group_keys)} samples")
+    else:
+        logging.warning("no val manifest / no field|echo columns -- validation dice will "
+                        "only be available POOLED, which is not what we want")
+
+    baseline = _baseline_dice(configs)
+    if baseline is not None:
+        logging.info(f"BASELINE (epoch {configs['baseline_epoch']} of "
+                     f"{os.path.dirname(configs['baseline_val_csv'])}) pooled val dice = "
+                     f"{baseline:.6f}  |  stop-if-below = {baseline - 0.01:.6f}")
+
     metrics_csv = os.path.join(configs["save_path"], "val_metrics.csv")
     if not os.path.exists(metrics_csv):
         with open(metrics_csv, "w") as f:
-            f.write("epoch,train_loss,val_loss,mean_dice\n")
+            cols = "epoch,train_loss,dice_ce,hole_term,hole_ratio,lam,val_loss,mean_dice"
+            if val_group_keys:
+                cols += ",dice_by_group"
+            f.write(cols + "\n")
 
     hole_kwargs = dict(thr=args.hole_thr,
                        max_hole_abs=args.hole_max_abs,
@@ -153,6 +206,8 @@ def train(args):
         model.train()
         epoch_start = time.time()
         epoch_loss = 0
+        epoch_base_loss = 0.0
+        epoch_hole_term = 0.0
         step = 0
         hole_stats.reset()
         hole_lam = hole_lambda_at(epoch + 1, args.hole_lambda,
@@ -169,6 +224,8 @@ def train(args):
             optimizer.zero_grad()
             outputs = model(inputs)
             loss = loss_function(outputs, labels)
+            base_loss_val = loss.item()
+            hole_term_val = 0.0
 
             # hole regularizer. The selector is a non-differentiable scipy flood
             # fill on detached probabilities, so it is a constant 0/1 mask here;
@@ -181,18 +238,23 @@ def train(args):
                     assert not hole_sel.requires_grad and hole_sel.grad_fn is None, \
                         "hole selector must not carry a gradient"
                     loss = loss + hole_lam * hole_pen
+                    hole_term_val = hole_lam * hole_pen.item()
                 else:
                     # lambda == 0: instrumentation only, never touch the loss
                     with torch.no_grad():
                         hole_pen, hole_sel = hole_penalty_with_selector(fg_logit, **hole_kwargs)
                 hole_stats.update(torch.sigmoid(fg_logit.detach()), labels, hole_sel,
-                                  penalty_value=hole_pen.item(), **hole_kwargs)
+                                  penalty_value=hole_pen.item(),
+                                  compute_leak=(step % args.hole_leak_every_n_steps == 0),
+                                  **hole_kwargs)
                 hole_time_sum += time.time() - hole_t0
                 hole_time_n += 1
 
             loss.backward()
             optimizer.step()
             epoch_loss += loss.item()
+            epoch_base_loss += base_loss_val
+            epoch_hole_term += hole_term_val
             global_step += 1
 
             step_time_sum += time.time() - step_t0
@@ -216,10 +278,21 @@ def train(args):
                       f"loss {loss.item():.4f}", flush=True)
 
         epoch_loss /= step
-        epoch_loss_values.append(epoch_loss)
-        logging.info(f"epoch {epoch + 1} average loss: {epoch_loss:.4f}")
+        epoch_base_loss /= step
+        epoch_hole_term /= step          # over ALL steps: skipped ones contribute 0,
+        epoch_loss_values.append(epoch_loss)   # so this is the term's real contribution
+        hole_ratio = epoch_hole_term / epoch_base_loss if epoch_base_loss else 0.0
+        logging.info(f"epoch {epoch + 1} average loss: {epoch_loss:.4f}  "
+                     f"dice_ce: {epoch_base_loss:.6f}  "
+                     f"lam*hole: {epoch_hole_term:.6e}  "
+                     f"ratio: {hole_ratio:.6e}  lam: {hole_lam:.6e}")
         if use_wandb:
-            wandb.log({"train/epoch_loss": epoch_loss, "epoch": epoch + 1}, step=global_step)
+            wandb.log({"train/epoch_loss": epoch_loss,
+                       "train/dice_ce": epoch_base_loss,
+                       "train/hole_term": epoch_hole_term,
+                       "train/hole_ratio": hole_ratio,
+                       "train/lam": hole_lam,
+                       "epoch": epoch + 1}, step=global_step)
 
         hole_summary = hole_stats.summary()
         if hole_summary:
@@ -227,8 +300,11 @@ def train(args):
             logging.info("epoch %d hole stats: " % (epoch + 1) +
                          "  ".join(f"{k.split('/')[1]}={v:.4f}"
                                    for k, v in hole_summary.items()))
+            for line in hole_stats.size_report():
+                logging.info(line)
             if use_wandb:
-                wandb.log({**hole_summary, "epoch": epoch + 1}, step=global_step)
+                wandb.log({**hole_summary, **hole_stats.size_summary(),
+                           "epoch": epoch + 1}, step=global_step)
 
         if (epoch + 1) % val_interval == 0:
             model.eval()
@@ -236,6 +312,7 @@ def train(args):
                 val_sample = None
                 val_loss = 0
                 val_step = 0
+                per_sample_dice = []
                 for val_idx, val_data in enumerate(val_dataloader):
                     val_inputs, val_labels = (val_data["image"].to(device),
                                               val_data["label"].to(device),
@@ -252,8 +329,10 @@ def train(args):
                     val_outputs = [post_pred(i) for i in decollate_batch(val_outputs)]
                     val_labels = [post_label(i) for i in decollate_batch(val_labels)]
 
-                    # compute metric for current iteration
-                    dice_metric(y_pred=val_outputs, y=val_labels)
+                    # compute metric for current iteration; keep the per-sample
+                    # value so dice can be broken out per group, never only pooled
+                    res = dice_metric(y_pred=val_outputs, y=val_labels)
+                    per_sample_dice.append(float(res.mean().item()))
 
                     if use_wandb and val_idx == 0:
                         val_sample = (val_inputs[0, 0].detach().cpu(),
@@ -268,11 +347,42 @@ def train(args):
 
                 val_loss /= max(val_step, 1)
                 metric_values.append(metric)
-                logging.info(f"epoch {epoch + 1} validation loss: {val_loss:.4f}, mean dice: {metric:.4f}")
+                logging.info(f"epoch {epoch + 1} validation loss: {val_loss:.4f}, "
+                             f"POOLED mean dice: {metric:.4f}"
+                             + (f"  (baseline {baseline:.4f}, delta {metric - baseline:+.4f})"
+                                if baseline is not None else ""))
+
+                group_dice = {}
+                if val_group_keys and len(per_sample_dice) == len(val_group_keys):
+                    acc = defaultdict(list)
+                    for idx, d in enumerate(per_sample_dice):
+                        acc[val_group_keys[idx]].append(d)
+                    te = {}
+                    for idx, k in enumerate(val_group_keys):
+                        te.setdefault(k, val_group_extra[idx])
+                    for k in sorted(acc):
+                        name = "_".join(f"{c}{v}" for c, v in zip(val_group_cols, k))
+                        group_dice[name] = sum(acc[k]) / len(acc[k])
+                        logging.info(f"    val dice [{name} te={te[k]}]: "
+                                     f"{group_dice[name]:.4f}  (n={len(acc[k])})")
+                elif val_group_keys:
+                    logging.warning(f"val manifest has {len(val_group_keys)} rows but "
+                                    f"{len(per_sample_dice)} samples were validated -- "
+                                    f"NOT breaking dice out per group, alignment is unsafe")
+
                 with open(metrics_csv, "a") as f:
-                    f.write(f"{epoch + 1},{epoch_loss:.6f},{val_loss:.6f},{metric:.6f}\n")
+                    row = (f"{epoch + 1},{epoch_loss:.6f},{epoch_base_loss:.6f},"
+                           f"{epoch_hole_term:.8e},{hole_ratio:.8e},{hole_lam:.6e},"
+                           f"{val_loss:.6f},{metric:.6f}")
+                    if val_group_keys:
+                        row += "," + ";".join(f"{k}={v:.6f}" for k, v in group_dice.items())
+                    f.write(row + "\n")
                 if use_wandb:
-                    log_dict = {"val/loss": val_loss, "val/mean_dice": metric, "epoch": epoch + 1}
+                    log_dict = {"val/loss": val_loss, "val/mean_dice_pooled": metric,
+                                "epoch": epoch + 1}
+                    log_dict.update({f"val/dice_{k}": v for k, v in group_dice.items()})
+                    if baseline is not None:
+                        log_dict["val/delta_vs_baseline"] = metric - baseline
                     if val_sample is not None:
                         log_dict["val/prediction"] = _overlay_image(*val_sample)
                     wandb.log(log_dict, step=global_step)
@@ -283,7 +393,7 @@ def train(args):
                     best_metric = metric
                     best_metric_epoch = epoch + 1
 
-                if (epoch + 1) % 10 == 0 or (epoch + 1) == max_epochs or is_best:
+                if (epoch + 1) % save_every == 0 or (epoch + 1) == max_epochs or is_best:
                     save_mode_path = os.path.join(configs["save_path"], configs["model_name"] +
                                                   '_checkpoint-%s.pth' % (epoch + 1))
                     torch.save(model.state_dict(), save_mode_path)
@@ -336,6 +446,13 @@ if __name__ == '__main__':
                         default=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
                         help='what device to use')
 
+    parser.add_argument('--max_epochs', type=int, default=None,
+                        help='override max_epochs from the config')
+
+    parser.add_argument('--save_every', type=int, default=None,
+                        help='checkpoint every N epochs (default: config save_every, else 10); '
+                             'every checkpoint is kept, the epoch is in the filename')
+
     # hole-filling regularizer. Every default reproduces the current behaviour:
     # hole_lambda 0.0 leaves the loss untouched and only runs the diagnostics.
     parser.add_argument('--hole_lambda', type=float, default=0.0,
@@ -356,6 +473,11 @@ if __name__ == '__main__':
                         help='min depth inside the mask, only with hole_close_iters > 0')
     parser.add_argument('--hole_every_n_steps', type=int, default=1,
                         help='run the selector every N steps; skipped steps contribute 0')
+
+    parser.add_argument('--hole_leak_every_n_steps', type=int, default=10,
+                        help='evaluate the leak_rate diagnostic every N steps; it is the '
+                             'expensive stat (closing + distance transform on hole-free '
+                             'slices), the other hole stats stay per-call')
 
     args = parser.parse_args()
 
