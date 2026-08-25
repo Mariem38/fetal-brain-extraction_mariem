@@ -16,6 +16,7 @@ from torch.optim import SGD
 from tqdm import tqdm
 
 from data_generator_monai import FetalTrainData
+from losses.hole_reg import HoleStats, hole_lambda_at, hole_penalty_with_selector
 from model_zoo import get_network
 
 
@@ -31,6 +32,16 @@ def _overlay_image(image, pred, label):
                                              "class_labels": {0: "background", 1: "brain"}},
                               "ground_truth": {"mask_data": label[..., mid].numpy().astype("uint8"),
                                                "class_labels": {0: "background", 1: "brain"}}})
+
+
+def _foreground_logit(outputs):
+    """Single-channel logit whose sigmoid equals the softmax foreground prob.
+
+    The network emits 2 channels and the main loss uses softmax, while the hole
+    term is written against one logit; softmax(z)[1] == sigmoid(z1 - z0), so this
+    is exact and the gradient still reaches both channels.
+    """
+    return outputs[:, 1:2] - outputs[:, 0:1]
 
 
 def train(args):
@@ -117,6 +128,20 @@ def train(args):
         with open(metrics_csv, "w") as f:
             f.write("epoch,train_loss,val_loss,mean_dice\n")
 
+    hole_kwargs = dict(thr=args.hole_thr,
+                       max_hole_abs=args.hole_max_abs,
+                       max_hole_rel=args.hole_max_rel,
+                       close_iters=args.hole_close_iters,
+                       min_depth_vox=args.hole_min_depth)
+    hole_stats = HoleStats()
+    hole_time_sum, hole_time_n = 0.0, 0
+    step_time_sum = 0.0
+    hole_timing_reported = False
+    logging.info(f"hole regularizer: lambda={args.hole_lambda} "
+                 f"warmup=[{args.hole_warmup_start}, {args.hole_warmup_end}] "
+                 f"every_n_steps={args.hole_every_n_steps} {hole_kwargs} "
+                 f"({'OFF, instrumentation only' if args.hole_lambda == 0.0 else 'ON'})")
+
     # Start training
     logging.info("-" * 30 + "training starts" + "-" * 30)
 
@@ -129,10 +154,14 @@ def train(args):
         epoch_start = time.time()
         epoch_loss = 0
         step = 0
+        hole_stats.reset()
+        hole_lam = hole_lambda_at(epoch + 1, args.hole_lambda,
+                                  args.hole_warmup_start, args.hole_warmup_end)
         for i, batch_data in enumerate(tqdm(train_dataloader,
                                             desc=f"epoch {epoch + 1}/{max_epochs}",
                                             leave=False, mininterval=10.0)):
             step += 1
+            step_t0 = time.time()
             inputs, labels = (batch_data["image"].to(device),
                               batch_data["label"].to(device),
                               )
@@ -140,10 +169,41 @@ def train(args):
             optimizer.zero_grad()
             outputs = model(inputs)
             loss = loss_function(outputs, labels)
+
+            # hole regularizer. The selector is a non-differentiable scipy flood
+            # fill on detached probabilities, so it is a constant 0/1 mask here;
+            # the gradient reaches the logits only through `prob`.
+            if step % args.hole_every_n_steps == 0:
+                hole_t0 = time.time()
+                fg_logit = _foreground_logit(outputs)
+                if hole_lam > 0.0:
+                    hole_pen, hole_sel = hole_penalty_with_selector(fg_logit, **hole_kwargs)
+                    assert not hole_sel.requires_grad and hole_sel.grad_fn is None, \
+                        "hole selector must not carry a gradient"
+                    loss = loss + hole_lam * hole_pen
+                else:
+                    # lambda == 0: instrumentation only, never touch the loss
+                    with torch.no_grad():
+                        hole_pen, hole_sel = hole_penalty_with_selector(fg_logit, **hole_kwargs)
+                hole_stats.update(torch.sigmoid(fg_logit.detach()), labels, hole_sel,
+                                  penalty_value=hole_pen.item(), **hole_kwargs)
+                hole_time_sum += time.time() - hole_t0
+                hole_time_n += 1
+
             loss.backward()
             optimizer.step()
             epoch_loss += loss.item()
             global_step += 1
+
+            step_time_sum += time.time() - step_t0
+            if not hole_timing_reported and global_step >= 50:
+                hole_timing_reported = True
+                hole_ms = 1000.0 * hole_time_sum / max(hole_time_n, 1)
+                step_ms = 1000.0 * step_time_sum / global_step
+                logging.info(f"hole selector timing over the first {global_step} steps: "
+                             f"{hole_ms:.1f} ms/selector call ({hole_time_n} calls), "
+                             f"{step_ms:.1f} ms/step total, "
+                             f"{100.0 * hole_time_sum / max(step_time_sum, 1e-9):.1f}% of step time")
 
             if use_wandb and global_step % 50 == 0:
                 wandb.log({"train/batch_loss": loss.item(),
@@ -160,6 +220,15 @@ def train(args):
         logging.info(f"epoch {epoch + 1} average loss: {epoch_loss:.4f}")
         if use_wandb:
             wandb.log({"train/epoch_loss": epoch_loss, "epoch": epoch + 1}, step=global_step)
+
+        hole_summary = hole_stats.summary()
+        if hole_summary:
+            hole_summary["hole/lambda"] = hole_lam
+            logging.info("epoch %d hole stats: " % (epoch + 1) +
+                         "  ".join(f"{k.split('/')[1]}={v:.4f}"
+                                   for k, v in hole_summary.items()))
+            if use_wandb:
+                wandb.log({**hole_summary, "epoch": epoch + 1}, step=global_step)
 
         if (epoch + 1) % val_interval == 0:
             model.eval()
@@ -266,6 +335,27 @@ if __name__ == '__main__':
                         type=str,
                         default=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
                         help='what device to use')
+
+    # hole-filling regularizer. Every default reproduces the current behaviour:
+    # hole_lambda 0.0 leaves the loss untouched and only runs the diagnostics.
+    parser.add_argument('--hole_lambda', type=float, default=0.0,
+                        help='weight of the hole-filling penalty (0.0 = off)')
+    parser.add_argument('--hole_warmup_start', type=int, default=10,
+                        help='epoch (1-based) at which the lambda ramp starts')
+    parser.add_argument('--hole_warmup_end', type=int, default=20,
+                        help='epoch (1-based) at which lambda reaches its full value')
+    parser.add_argument('--hole_thr', type=float, default=0.5,
+                        help='probability threshold for the hard mask')
+    parser.add_argument('--hole_max_abs', type=int, default=200,
+                        help='max hole size in pixels; larger enclosed regions are kept')
+    parser.add_argument('--hole_max_rel', type=float, default=0.05,
+                        help='max hole size as a fraction of the predicted mask')
+    parser.add_argument('--hole_close_iters', type=int, default=0,
+                        help='binary_closing iterations before the fill (0 = none)')
+    parser.add_argument('--hole_min_depth', type=float, default=2.0,
+                        help='min depth inside the mask, only with hole_close_iters > 0')
+    parser.add_argument('--hole_every_n_steps', type=int, default=1,
+                        help='run the selector every N steps; skipped steps contribute 0')
 
     args = parser.parse_args()
 
