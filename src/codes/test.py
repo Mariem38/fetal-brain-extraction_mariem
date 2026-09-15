@@ -1,3 +1,31 @@
+"""Test a trained model: per-volume Dice and IoU, saved to <modality>_<method>.csv.
+
+Added on top of the original FetalBET test script (Aug 2026):
+
+1. Evaluation metrics from a confusion matrix (ConfusionMatrixMetric, foreground = brain)
+   - tp / fp / tn / fn logged for every volume
+   - at the end: confusion matrix summed over all volumes, then
+     voxel-weighted sensitivity, specificity, precision and F1 (voxels pooled)
+     and per-volume mean of the same four (each volume weighted equally)
+
+2. Component scores / fragmentation (component_scores)
+   - each predicted slice is labelled with 8-connected components in-plane
+   - n_comp_2d          total blobs summed over all slices
+   - max_comp_slice     most blobs found on a single slice
+   - n_slices_multi     slices with more than one blob (fragmented)
+   - n_slices_fg        slices with any prediction
+   - frac_slices_multi  n_slices_multi / n_slices_fg, the main fragmentation score
+   - summary logged at the end: stacks with any fragmented slice, stacks with
+     frac_slices_multi > 0.05, mean/std of frac_slices_multi, worst slice count
+
+3. CSV and data handling
+   - new columns: Volume + the five component scores above
+   - "lowfield" / "highfield" modality: subject parsed from the BIDS filename
+
+Notes
+- Metrics 1-2 are only computed in the non-TTA branch (test_augmentation: False).
+- There is no loss here; the validation loss is logged in train.py.
+"""
 import os
 import math
 import sys
