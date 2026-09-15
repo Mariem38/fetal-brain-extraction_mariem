@@ -1,5 +1,5 @@
 model_name: "AttUNet" #BasicUNet, DynUNet, SwinUNETR
-saved_model_path: "../saved_models/AttUNet_t2d/AttUNet_checkpoint-188.pth"
+saved_model_path: "../saved_models/AttUNet_baseline_sim_v2_ep48.pth"
 
 test_data_type: "file"     #or "path, file
 test_data_paths: ['../../datasets/fmri_dataset/data_csv/test_data.csv'] #'../../datasets/fmri_dataset/OpenNeuro_3D' # ['../../datasets/t2mri_dataset/data_csv/otherscanners.csv']
@@ -17,5 +17,5 @@ data_root_dir: "../../datasets/"
 
 save_metrics: True
 
-plot_results: True
+plot_results: False
 

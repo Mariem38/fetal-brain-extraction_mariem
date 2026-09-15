@@ -1,0 +1,152 @@
+[13:50:13.648] Namespace(cfg='../configs/test_configs_highfield.yml', n_gpu=2, deterministic=1, seed=1234, device=device(type='cuda'))
+[13:50:13.648] {'model_name': 'AttUNet', 'saved_model_path': '/media/mial/HDD2TB/fetbet_train/baseline_sim_v2/AttUNet_checkpoint-48.pth', 'test_data_type': 'file', 'test_data_paths': ['/home/mial/Documents/for_mariem/highfield_test.csv'], 'modality': 'otherscanners', 'test_augmentation': False, 'img_size': 256, 'classes_num': 2, 'include_background': False, 'save_path': '../results/v2_ep48_highfield', 'save_predictions': True, 'data_root_dir': '/home/mial/Documents/for_mariem', 'save_metrics': True, 'plot_results': False}
+[13:50:14.456] total_trainable_parameters: 31739250
+[13:50:17.794] confusion matrix tp=39864 fp=195 tn=6505920 fn=6597
+[13:50:20.614] confusion matrix tp=40607 fp=400 tn=6503914 fn=7655
+[13:50:23.448] confusion matrix tp=35970 fp=174 tn=6502179 fn=14253
+[13:50:26.751] confusion matrix tp=36695 fp=51 tn=6507617 fn=8213
+[13:50:29.587] confusion matrix tp=34728 fp=800 tn=6506411 fn=10637
+[13:50:32.906] confusion matrix tp=29515 fp=305 tn=6508324 fn=14432
+[13:50:35.982] confusion matrix tp=37871 fp=684 tn=6506564 fn=7457
+[13:50:39.018] confusion matrix tp=36095 fp=24 tn=6506792 fn=9665
+[13:50:41.956] confusion matrix tp=29677 fp=524 tn=6508629 fn=13746
+[13:50:44.845] confusion matrix tp=120853 fp=217 tn=6415279 fn=16227
+[13:50:47.601] confusion matrix tp=119641 fp=1074 tn=6418615 fn=13246
+[13:50:50.601] confusion matrix tp=113292 fp=1086 tn=6421282 fn=16916
+[13:50:53.768] confusion matrix tp=66489 fp=1007 tn=6471709 fn=13371
+[13:50:56.774] confusion matrix tp=70448 fp=385 tn=6468542 fn=13201
+[13:50:59.964] confusion matrix tp=67579 fp=853 tn=6470458 fn=13686
+[13:51:02.887] confusion matrix tp=69812 fp=39 tn=6468186 fn=14539
+[13:51:05.832] confusion matrix tp=69728 fp=94 tn=6467875 fn=14879
+[13:51:09.068] confusion matrix tp=68913 fp=108 tn=6466015 fn=17540
+[13:51:12.727] confusion matrix tp=78074 fp=55 tn=6466897 fn=7550
+[13:51:15.682] confusion matrix tp=78125 fp=27 tn=6465418 fn=9006
+[13:51:18.680] confusion matrix tp=73958 fp=285 tn=6465440 fn=12893
+[13:51:21.472] confusion matrix tp=104403 fp=204 tn=6434302 fn=13667
+[13:51:24.236] confusion matrix tp=101770 fp=128 tn=6434821 fn=15857
+[13:51:27.132] confusion matrix tp=93133 fp=146 tn=6434439 fn=24858
+[13:51:30.247] confusion matrix tp=106162 fp=350 tn=6434376 fn=11688
+[13:51:33.093] confusion matrix tp=104735 fp=400 tn=6435227 fn=12214
+[13:51:36.073] confusion matrix tp=96464 fp=1354 tn=6433193 fn=21565
+[13:51:39.083] confusion matrix tp=104583 fp=103 tn=6434181 fn=13709
+[13:51:42.149] confusion matrix tp=104516 fp=76 tn=6435089 fn=12895
+[13:51:45.299] confusion matrix tp=100563 fp=54 tn=6435959 fn=16000
+[13:51:48.339] confusion matrix tp=158287 fp=36 tn=6874868 fn=17049
+[13:51:51.391] confusion matrix tp=154617 fp=365 tn=6879310 fn=15948
+[13:51:54.422] confusion matrix tp=155525 fp=826 tn=6874134 fn=19755
+[13:51:57.912] confusion matrix tp=157391 fp=88 tn=6876410 fn=16351
+[13:52:00.538] Namespace(cfg='../configs/test_configs_highfield.yml', n_gpu=2, deterministic=1, seed=1234, device=device(type='cuda'))
+[13:52:00.538] {'model_name': 'AttUNet', 'saved_model_path': '/media/mial/HDD2TB/fetbet_train/baseline_sim_v2/AttUNet_checkpoint-48.pth', 'test_data_type': 'file', 'test_data_paths': ['/home/mial/Documents/for_mariem/highfield_test.csv'], 'modality': 'otherscanners', 'test_augmentation': False, 'img_size': 256, 'classes_num': 2, 'include_background': False, 'save_path': '../results/v2_ep48_highfield', 'save_predictions': True, 'data_root_dir': '/home/mial/Documents/for_mariem', 'save_metrics': True, 'plot_results': False}
+[13:52:01.485] confusion matrix tp=158877 fp=139 tn=6874767 fn=16457
+[13:52:01.570] total_trainable_parameters: 31739250
+[13:52:08.915] confusion matrix tp=156995 fp=1389 tn=6875848 fn=16008
+[13:52:09.340] confusion matrix tp=39864 fp=195 tn=6505920 fn=6597
+[13:52:15.486] confusion matrix tp=157893 fp=67 tn=6879323 fn=12957
+[13:52:15.899] confusion matrix tp=40607 fp=400 tn=6503914 fn=7655
+[13:52:20.516] confusion matrix tp=35970 fp=174 tn=6502179 fn=14253
+[13:52:21.055] confusion matrix tp=159125 fp=45 tn=6380420 fn=12986
+[13:52:24.079] confusion matrix tp=36695 fp=51 tn=6507617 fn=8213
+[13:52:25.115] confusion matrix tp=160588 fp=378 tn=6378827 fn=12783
+[13:52:26.316] confusion matrix tp=48538 fp=86 tn=1976022 fn=8506
+[13:52:27.448] confusion matrix tp=49117 fp=333 tn=1975232 fn=8470
+[13:52:27.672] confusion matrix tp=34728 fp=800 tn=6506411 fn=10637
+[13:52:28.206] confusion matrix tp=47103 fp=0 tn=1973230 fn=12819
+[13:52:29.792] confusion matrix tp=47019 fp=4 tn=1885146 fn=8567
+[13:52:31.482] confusion matrix tp=46800 fp=32 tn=1885589 fn=8315
+[13:52:32.510] confusion matrix tp=47232 fp=51 tn=1881537 fn=11916
+[13:52:32.841] confusion matrix tp=29515 fp=305 tn=6508324 fn=14432
+[13:52:33.165] confusion matrix tp=48407 fp=10 tn=1881855 fn=10464
+[13:52:34.505] confusion matrix tp=48207 fp=6 tn=1882107 fn=10416
+[13:52:35.637] confusion matrix tp=46478 fp=0 tn=1880823 fn=13435
+[13:52:35.648] evaluation metric dice mean: 0.9139139031370481
+[13:52:35.648] evaluation metric dice std: 0.03642525374943387
+[13:52:35.648] evaluation metric iou mean: 0.8434701884786288
+[13:52:35.648] evaluation metric iou std: 0.05956683946762745
+[13:52:35.679] evaluation metric dice: tensor([0.9139], device='cuda:0')
+[13:52:35.697] evaluation metric iou: tensor([0.8435], device='cuda:0')
+[13:52:35.697] stacks with a fragmented slice: 46 / 48
+[13:52:35.697] stacks with frac_slices_multi > 0.05: 31 / 48
+[13:52:35.697] frac_slices_multi mean: 0.08970747060694824
+[13:52:35.697] frac_slices_multi std: 0.07093369296431372
+[13:52:35.697] worst slice component count: 11
+[13:52:35.699] confusion matrix summed over 48 volumes (foreground = brain):
+[13:52:35.699]                      pred bg           pred fg
+[13:52:35.699]    true bg         272049088             15057
+[13:52:35.699]    true fg            631364           4082462
+[13:52:35.699] voxel-weighted sensitivity: 0.866061270236969
+[13:52:35.699] voxel-weighted specificity: 0.9999446272850037
+[13:52:35.699] voxel-weighted precision: 0.9963253140449524
+[13:52:35.699] voxel-weighted f1 score: 0.9266376472604353
+[13:52:35.711] per-volume mean sensitivity: 0.8464393615722656
+[13:52:35.711] per-volume mean specificity: 0.9999480843544006
+[13:52:35.711] per-volume mean precision: 0.9956157803535461
+[13:52:35.711] per-volume mean f1 score: 0.913913905620575
+[13:52:35.711] latency mean: 0.02514301256539719
+[13:52:35.711] latency std: 0.005366942309897644
+[13:52:36.531] confusion matrix tp=37871 fp=684 tn=6506564 fn=7457
+[13:52:39.601] confusion matrix tp=36095 fp=24 tn=6506792 fn=9665
+[13:52:42.567] confusion matrix tp=29677 fp=524 tn=6508629 fn=13746
+[13:52:45.338] confusion matrix tp=120853 fp=217 tn=6415279 fn=16227
+[13:52:48.416] confusion matrix tp=119641 fp=1074 tn=6418615 fn=13246
+[13:52:51.043] confusion matrix tp=113292 fp=1086 tn=6421282 fn=16916
+[13:52:53.861] confusion matrix tp=66489 fp=1007 tn=6471709 fn=13371
+[13:52:57.266] confusion matrix tp=70448 fp=385 tn=6468542 fn=13201
+[13:53:00.042] confusion matrix tp=67579 fp=853 tn=6470458 fn=13686
+[13:53:02.973] confusion matrix tp=69812 fp=39 tn=6468186 fn=14539
+[13:53:05.677] confusion matrix tp=69728 fp=94 tn=6467875 fn=14879
+[13:53:08.582] confusion matrix tp=68913 fp=108 tn=6466015 fn=17540
+[13:53:11.334] confusion matrix tp=78074 fp=55 tn=6466897 fn=7550
+[13:53:14.049] confusion matrix tp=78125 fp=27 tn=6465418 fn=9006
+[13:53:16.994] confusion matrix tp=73958 fp=285 tn=6465440 fn=12893
+[13:53:19.991] confusion matrix tp=104403 fp=204 tn=6434302 fn=13667
+[13:53:23.216] confusion matrix tp=101770 fp=128 tn=6434821 fn=15857
+[13:53:26.160] confusion matrix tp=93133 fp=146 tn=6434439 fn=24858
+[13:53:28.991] confusion matrix tp=106162 fp=350 tn=6434376 fn=11688
+[13:53:31.725] confusion matrix tp=104735 fp=400 tn=6435227 fn=12214
+[13:53:34.554] confusion matrix tp=96464 fp=1354 tn=6433193 fn=21565
+[13:53:37.398] confusion matrix tp=104583 fp=103 tn=6434181 fn=13709
+[13:53:40.188] confusion matrix tp=104516 fp=76 tn=6435089 fn=12895
+[13:53:43.105] confusion matrix tp=100563 fp=54 tn=6435959 fn=16000
+[13:53:46.501] confusion matrix tp=158287 fp=36 tn=6874868 fn=17049
+[13:53:49.528] confusion matrix tp=154617 fp=365 tn=6879310 fn=15948
+[13:53:52.746] confusion matrix tp=155525 fp=826 tn=6874134 fn=19755
+[13:53:55.901] confusion matrix tp=157391 fp=88 tn=6876410 fn=16351
+[13:53:59.244] confusion matrix tp=158877 fp=139 tn=6874767 fn=16457
+[13:54:02.626] confusion matrix tp=156995 fp=1389 tn=6875848 fn=16008
+[13:54:06.095] confusion matrix tp=157893 fp=67 tn=6879323 fn=12957
+[13:54:08.970] confusion matrix tp=159125 fp=45 tn=6380420 fn=12986
+[13:54:11.981] confusion matrix tp=160588 fp=378 tn=6378827 fn=12783
+[13:54:12.933] confusion matrix tp=48538 fp=86 tn=1976022 fn=8506
+[13:54:13.767] confusion matrix tp=49117 fp=333 tn=1975232 fn=8470
+[13:54:14.609] confusion matrix tp=47103 fp=0 tn=1973230 fn=12819
+[13:54:15.389] confusion matrix tp=47019 fp=4 tn=1885146 fn=8567
+[13:54:16.192] confusion matrix tp=46800 fp=32 tn=1885589 fn=8315
+[13:54:16.960] confusion matrix tp=47232 fp=51 tn=1881537 fn=11916
+[13:54:17.659] confusion matrix tp=48407 fp=10 tn=1881855 fn=10464
+[13:54:18.400] confusion matrix tp=48207 fp=6 tn=1882107 fn=10416
+[13:54:19.077] confusion matrix tp=46478 fp=0 tn=1880823 fn=13435
+[13:54:19.083] evaluation metric dice mean: 0.9139139031370481
+[13:54:19.083] evaluation metric dice std: 0.03642525374943387
+[13:54:19.083] evaluation metric iou mean: 0.8434701884786288
+[13:54:19.083] evaluation metric iou std: 0.05956683946762745
+[13:54:19.100] evaluation metric dice: tensor([0.9139], device='cuda:0')
+[13:54:19.112] evaluation metric iou: tensor([0.8435], device='cuda:0')
+[13:54:19.112] stacks with a fragmented slice: 46 / 48
+[13:54:19.112] stacks with frac_slices_multi > 0.05: 31 / 48
+[13:54:19.112] frac_slices_multi mean: 0.08970747060694824
+[13:54:19.112] frac_slices_multi std: 0.07093369296431372
+[13:54:19.112] worst slice component count: 11
+[13:54:19.114] confusion matrix summed over 48 volumes (foreground = brain):
+[13:54:19.114]                      pred bg           pred fg
+[13:54:19.114]    true bg         272049088             15057
+[13:54:19.114]    true fg            631364           4082462
+[13:54:19.114] voxel-weighted sensitivity: 0.866061270236969
+[13:54:19.114] voxel-weighted specificity: 0.9999446272850037
+[13:54:19.114] voxel-weighted precision: 0.9963253140449524
+[13:54:19.114] voxel-weighted f1 score: 0.9266376472604353
+[13:54:19.126] per-volume mean sensitivity: 0.8464393615722656
+[13:54:19.126] per-volume mean specificity: 0.9999480843544006
+[13:54:19.126] per-volume mean precision: 0.9956157803535461
+[13:54:19.126] per-volume mean f1 score: 0.913913905620575
+[13:54:19.126] latency mean: 0.022945694055324106
+[13:54:19.126] latency std: 0.0029025457398592263

@@ -1,0 +1,2 @@
+# model weights (too large for git; best checkpoints are backed up in fetbet_models/)
+*.pth

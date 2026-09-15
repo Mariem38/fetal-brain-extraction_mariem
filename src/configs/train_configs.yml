@@ -17,9 +17,9 @@ val_interval: 2
 include_background: False
 optimizer: "Adam"
 learning_rate: 0.00001
-save_path: "/media/mial/HDD2TB/fetbet_train/baseline_sim_v3/"
+save_path: "/media/mial/HDD2TB/fetbet_train/baseline_sim_v2/"
 
 use_wandb: True
 wandb_project: "fetal-brain-extraction"
 wandb_entity:
-wandb_run_name: "baseline_sim_v3"
+wandb_run_name: "baseline_sim_v2"

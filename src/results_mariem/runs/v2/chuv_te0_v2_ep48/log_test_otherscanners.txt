@@ -1,0 +1,250 @@
+[12:17:54.135] Namespace(cfg='../configs/test_configs_chuv_te0_v2_ep48.yml', n_gpu=2, deterministic=1, seed=1234, device=device(type='cuda'))
+[12:17:54.135] {'model_name': 'AttUNet', 'saved_model_path': '/media/mial/HDD2TB/fetbet_train/baseline_sim_v2/AttUNet_checkpoint-48.pth', 'test_data_type': 'file', 'test_data_paths': ['/media/mial/HDD2TB/fetbet_data/chuv_te0_test.csv'], 'modality': 'otherscanners', 'test_augmentation': False, 'img_size': 256, 'classes_num': 2, 'include_background': False, 'save_path': '../results/chuv_te0_v2_ep48', 'save_predictions': True, 'data_root_dir': '/media/mial/HDD2TB/data_mariem', 'save_metrics': True, 'plot_results': False}
+[12:17:54.551] total_trainable_parameters: 31739250
+[12:17:55.732] confusion matrix tp=44854 fp=51 tn=4559153 fn=3942
+[12:17:56.943] confusion matrix tp=42884 fp=262 tn=6096813 fn=4041
+[12:17:57.752] confusion matrix tp=42744 fp=4 tn=4048233 fn=5019
+[12:17:58.172] confusion matrix tp=51457 fp=129 tn=2196939 fn=4275
+[12:17:58.587] confusion matrix tp=51091 fp=50 tn=2197018 fn=4641
+[12:17:59.017] confusion matrix tp=49594 fp=35 tn=2302068 fn=3503
+[12:17:59.432] confusion matrix tp=48311 fp=800 tn=2198965 fn=4724
+[12:17:59.838] confusion matrix tp=52826 fp=243 tn=2197236 fn=2495
+[12:18:00.258] confusion matrix tp=48116 fp=1 tn=2201350 fn=3333
+[12:18:00.396] confusion matrix tp=60048 fp=626 tn=959191 fn=4135
+[12:18:00.834] confusion matrix tp=49803 fp=20 tn=2301927 fn=3450
+[12:18:00.935] confusion matrix tp=69449 fp=6458 tn=946073 fn=2020
+[12:18:01.520] confusion matrix tp=60447 fp=92 tn=2905359 fn=3702
+[12:18:02.082] confusion matrix tp=0 fp=34 tn=2969276 fn=290
+[12:18:02.647] confusion matrix tp=58293 fp=4 tn=2907331 fn=3972
+[12:18:03.207] confusion matrix tp=69017 fp=730 tn=2895016 fn=4837
+[12:18:03.764] confusion matrix tp=69319 fp=366 tn=2892666 fn=7249
+[12:18:04.323] confusion matrix tp=59041 fp=42 tn=2906587 fn=3930
+[12:18:04.889] confusion matrix tp=53743 fp=13 tn=2911434 fn=4410
+[12:18:05.446] confusion matrix tp=73344 fp=21 tn=2790135 fn=3700
+[12:18:05.871] confusion matrix tp=64081 fp=50 tn=2185257 fn=3412
+[12:18:06.394] confusion matrix tp=15041 fp=12991 tn=2629757 fn=4611
+[12:18:06.812] confusion matrix tp=55414 fp=11226 tn=2181942 fn=4218
+[12:18:07.243] confusion matrix tp=62972 fp=392 tn=2181303 fn=8133
+[12:18:07.524] confusion matrix tp=40101 fp=5066 tn=1485320 fn=5513
+[12:18:07.947] confusion matrix tp=42437 fp=18170 tn=2187767 fn=4426
+[12:18:08.230] confusion matrix tp=31070 fp=12826 tn=1490083 fn=2021
+[12:18:08.648] confusion matrix tp=48550 fp=16659 tn=2183520 fn=4071
+[12:18:09.174] confusion matrix tp=85170 fp=82 tn=2675971 fn=3577
+[12:18:09.702] confusion matrix tp=84656 fp=288 tn=2673273 fn=6583
+[12:18:10.353] confusion matrix tp=45926 fp=24400 tn=3199051 fn=7423
+[12:18:11.052] confusion matrix tp=83872 fp=87 tn=3494558 fn=5483
+[12:18:11.698] confusion matrix tp=83766 fp=48 tn=3188560 fn=4426
+[12:18:12.342] confusion matrix tp=81951 fp=80 tn=3190960 fn=3809
+[12:18:12.979] confusion matrix tp=84671 fp=74 tn=3187152 fn=4903
+[12:18:13.525] confusion matrix tp=69953 fp=254 tn=2782138 fn=5895
+[12:18:14.137] confusion matrix tp=71925 fp=68 tn=3098571 fn=3836
+[12:18:14.640] confusion matrix tp=71718 fp=36 tn=2586514 fn=4132
+[12:18:15.176] confusion matrix tp=67633 fp=184 tn=2796009 fn=3374
+[12:18:15.694] confusion matrix tp=72329 fp=71 tn=2586202 fn=3798
+[12:18:16.240] confusion matrix tp=71968 fp=164 tn=2791345 fn=3723
+[12:18:16.853] confusion matrix tp=71741 fp=41 tn=3098826 fn=3792
+[12:18:17.294] confusion matrix tp=61574 fp=29 tn=2084444 fn=4353
+[12:18:17.697] confusion matrix tp=72405 fp=12 tn=1895195 fn=3588
+[12:18:18.099] confusion matrix tp=76066 fp=553 tn=1891672 fn=2909
+[12:18:18.166] confusion matrix tp=8398 fp=36 tn=297571 fn=1195
+[12:18:18.567] confusion matrix tp=76729 fp=385 tn=1891326 fn=2760
+[12:18:19.006] confusion matrix tp=59727 fp=37 tn=2188810 fn=4226
+[12:18:19.401] confusion matrix tp=71875 fp=11 tn=1895754 fn=3560
+[12:18:19.831] confusion matrix tp=65577 fp=55 tn=2080787 fn=3981
+[12:18:20.257] confusion matrix tp=29878 fp=147 tn=2220665 fn=2110
+[12:18:20.689] confusion matrix tp=32512 fp=121 tn=2217161 fn=3006
+[12:18:21.163] confusion matrix tp=31763 fp=33 tn=2423532 fn=2272
+[12:18:21.630] confusion matrix tp=29758 fp=202 tn=2424668 fn=2972
+[12:18:22.067] confusion matrix tp=33947 fp=81 tn=2216216 fn=2556
+[12:18:22.488] confusion matrix tp=32429 fp=78 tn=2217795 fn=2498
+[12:18:22.913] confusion matrix tp=27996 fp=669 tn=2217452 fn=6683
+[12:18:23.273] confusion matrix tp=33839 fp=104 tn=1909917 fn=1740
+[12:18:23.634] confusion matrix tp=31035 fp=1 tn=1912494 fn=2070
+[12:18:24.070] confusion matrix tp=31966 fp=67 tn=2320859 fn=2308
+[12:18:24.480] confusion matrix tp=68660 fp=43 tn=2280092 fn=6405
+[12:18:24.842] confusion matrix tp=31707 fp=5 tn=1910468 fn=3420
+[12:18:25.195] confusion matrix tp=22648 fp=4768 tn=1916432 fn=1752
+[12:18:25.549] confusion matrix tp=52977 fp=649 tn=1991033 fn=3341
+[12:18:25.992] confusion matrix tp=32523 fp=17 tn=2319995 fn=2665
+[12:18:26.520] confusion matrix tp=32795 fp=71 tn=2729755 fn=2179
+[12:18:27.064] confusion matrix tp=54339 fp=358 tn=2757629 fn=54874
+[12:18:27.664] confusion matrix tp=88618 fp=595 tn=2971252 fn=11535
+[12:18:28.220] confusion matrix tp=52115 fp=7163 tn=2774739 fn=33183
+[12:18:28.819] confusion matrix tp=65285 fp=626 tn=2971442 fn=34647
+[12:18:29.495] confusion matrix tp=67753 fp=3037 tn=3405328 fn=5482
+[12:18:30.086] confusion matrix tp=72464 fp=6351 tn=2983738 fn=9447
+[12:18:30.507] confusion matrix tp=43331 fp=1071 tn=2174439 fn=33959
+[12:18:31.099] confusion matrix tp=75591 fp=1512 tn=2985352 fn=9545
+[12:18:31.513] confusion matrix tp=45687 fp=173 tn=2173242 fn=33698
+[12:18:32.210] confusion matrix tp=64364 fp=1203 tn=3411465 fn=4568
+[12:18:32.651] confusion matrix tp=23103 fp=2618 tn=2225179 fn=1900
+[12:18:33.081] confusion matrix tp=27487 fp=5 tn=2222057 fn=3251
+[12:18:33.502] confusion matrix tp=27186 fp=28 tn=2223016 fn=2570
+[12:18:33.928] confusion matrix tp=26867 fp=23 tn=2223839 fn=2071
+[12:18:34.353] confusion matrix tp=27060 fp=37 tn=2223447 fn=2256
+[12:18:34.777] confusion matrix tp=19767 fp=2736 tn=2228156 fn=2141
+[12:18:35.193] confusion matrix tp=23332 fp=20 tn=2227591 fn=1857
+[12:18:35.626] confusion matrix tp=24539 fp=1416 tn=2224478 fn=2367
+[12:18:36.063] confusion matrix tp=23147 fp=816 tn=2226874 fn=1963
+[12:18:36.484] confusion matrix tp=24566 fp=19 tn=2226460 fn=1755
+[12:18:36.904] confusion matrix tp=23069 fp=15 tn=2227980 fn=1736
+[12:18:37.341] confusion matrix tp=23956 fp=18 tn=2227250 fn=1576
+[12:18:37.762] confusion matrix tp=23909 fp=298 tn=2226740 fn=1853
+[12:18:38.187] confusion matrix tp=9815 fp=1468 tn=2237766 fn=3751
+[12:18:38.612] confusion matrix tp=23897 fp=273 tn=2227005 fn=1625
+[12:18:39.048] confusion matrix tp=23873 fp=44 tn=2227380 fn=1503
+[12:18:39.471] confusion matrix tp=24250 fp=136 tn=2226981 fn=1433
+[12:18:39.892] confusion matrix tp=24420 fp=14 tn=2226406 fn=1960
+[12:18:40.314] confusion matrix tp=24512 fp=27 tn=2226042 fn=2219
+[12:18:40.742] confusion matrix tp=48778 fp=54 tn=2201294 fn=2674
+[12:18:41.167] confusion matrix tp=49576 fp=17 tn=2199359 fn=3848
+[12:18:41.595] confusion matrix tp=47240 fp=23 tn=2202829 fn=2708
+[12:18:42.025] confusion matrix tp=41403 fp=36 tn=2208088 fn=3273
+[12:18:42.458] confusion matrix tp=47673 fp=2 tn=2202036 fn=3089
+[12:18:42.896] confusion matrix tp=44923 fp=50 tn=2205015 fn=2812
+[12:18:43.325] confusion matrix tp=46945 fp=70 tn=2202967 fn=2818
+[12:18:43.757] confusion matrix tp=48964 fp=63 tn=2200791 fn=2982
+[12:18:44.185] confusion matrix tp=23211 fp=21 tn=2227533 fn=2035
+[12:18:44.816] confusion matrix tp=53561 fp=58 tn=3118474 fn=2307
+[12:18:45.300] confusion matrix tp=53930 fp=43 tn=2502277 fn=3750
+[12:18:45.933] confusion matrix tp=52476 fp=24 tn=3118340 fn=3560
+[12:18:46.382] confusion matrix tp=20881 fp=28 tn=2225617 fn=6274
+[12:18:46.824] confusion matrix tp=11154 fp=5254 tn=2233979 fn=2413
+[12:18:47.254] confusion matrix tp=20376 fp=6 tn=2228159 fn=4259
+[12:18:47.680] confusion matrix tp=24768 fp=44 tn=2223737 fn=4251
+[12:18:48.099] confusion matrix tp=4235 fp=7773 tn=2238863 fn=1929
+[12:18:48.523] confusion matrix tp=13523 fp=6402 tn=2229497 fn=3378
+[12:18:48.947] confusion matrix tp=12505 fp=7519 tn=2231321 fn=1455
+[12:18:49.370] confusion matrix tp=22849 fp=0 tn=2228280 fn=1671
+[12:18:49.801] confusion matrix tp=9603 fp=9828 tn=2229627 fn=3742
+[12:18:50.228] confusion matrix tp=24857 fp=0 tn=2223717 fn=4226
+[12:18:50.650] confusion matrix tp=28079 fp=17 tn=2222806 fn=1898
+[12:18:51.073] confusion matrix tp=21393 fp=270 tn=2226722 fn=4415
+[12:18:51.492] confusion matrix tp=7967 fp=4931 tn=2237440 fn=2462
+[12:18:51.922] confusion matrix tp=26266 fp=32 tn=2224414 fn=2088
+[12:18:52.354] confusion matrix tp=20622 fp=685 tn=2225745 fn=5748
+[12:18:52.780] confusion matrix tp=10233 fp=5311 tn=2235581 fn=1675
+[12:18:53.205] confusion matrix tp=68446 fp=30 tn=2180177 fn=4147
+[12:18:53.624] confusion matrix tp=69903 fp=49 tn=2178736 fn=4112
+[12:18:53.726] confusion matrix tp=75493 fp=12366 tn=933886 fn=2255
+[12:18:54.155] confusion matrix tp=62847 fp=18 tn=2184884 fn=5051
+[12:18:54.584] confusion matrix tp=70465 fp=14 tn=2177825 fn=4496
+[12:18:55.008] confusion matrix tp=63181 fp=13 tn=2186055 fn=3551
+[12:18:55.442] confusion matrix tp=64936 fp=12 tn=2184194 fn=3658
+[12:18:55.976] confusion matrix tp=32976 fp=435 tn=2728055 fn=3334
+[12:18:56.160] confusion matrix tp=71772 fp=14136 tn=1651232 fn=3660
+[12:18:56.610] confusion matrix tp=28061 fp=843 tn=2324012 fn=2284
+[12:18:56.697] confusion matrix tp=23174 fp=4827 tn=887662 fn=5937
+[12:18:57.146] confusion matrix tp=34839 fp=179 tn=2317222 fn=2960
+[12:18:57.606] confusion matrix tp=35189 fp=13 tn=2316749 fn=3249
+[12:18:58.031] confusion matrix tp=71541 fp=17 tn=2177074 fn=4168
+[12:18:58.131] confusion matrix tp=59357 fp=882 tn=960326 fn=3435
+[12:18:58.589] confusion matrix tp=59557 fp=51 tn=2190043 fn=3149
+[12:18:59.032] confusion matrix tp=14119 fp=1 tn=2231089 fn=7591
+[12:18:59.461] confusion matrix tp=16540 fp=219 tn=2230429 fn=5612
+[12:18:59.875] confusion matrix tp=16539 fp=56 tn=2230667 fn=5538
+[12:19:00.302] confusion matrix tp=19396 fp=1706 tn=2229367 fn=2331
+[12:19:00.711] confusion matrix tp=19562 fp=1418 tn=2229814 fn=2006
+[12:19:01.128] confusion matrix tp=19444 fp=9 tn=2230481 fn=2866
+[12:19:01.541] confusion matrix tp=5668 fp=15 tn=2230919 fn=16198
+[12:19:01.972] confusion matrix tp=19125 fp=11 tn=2231999 fn=1665
+[12:19:02.401] confusion matrix tp=8643 fp=7086 tn=2236263 fn=808
+[12:19:02.837] confusion matrix tp=20530 fp=451 tn=2229589 fn=2230
+[12:19:03.267] confusion matrix tp=20283 fp=864 tn=2229871 fn=1782
+[12:19:03.694] confusion matrix tp=19914 fp=13 tn=2231109 fn=1764
+[12:19:04.122] confusion matrix tp=20372 fp=242 tn=2227212 fn=4974
+[12:19:04.724] confusion matrix tp=74916 fp=35 tn=2993512 fn=3537
+[12:19:05.258] confusion matrix tp=77464 fp=73 tn=2681428 fn=5835
+[12:19:05.865] confusion matrix tp=74462 fp=18 tn=2993718 fn=3802
+[12:19:06.296] confusion matrix tp=74527 fp=246 tn=2174400 fn=3627
+[12:19:06.854] confusion matrix tp=75548 fp=45 tn=2685933 fn=3274
+[12:19:07.280] confusion matrix tp=75164 fp=235 tn=2173938 fn=3463
+[12:19:07.823] confusion matrix tp=75604 fp=55 tn=2685700 fn=3441
+[12:19:08.435] confusion matrix tp=74621 fp=29 tn=2993356 fn=3994
+[12:19:09.023] confusion matrix tp=19110 fp=23006 tn=2923181 fn=4303
+[12:19:09.493] confusion matrix tp=32741 fp=6466 tn=2416965 fn=1428
+[12:19:09.926] confusion matrix tp=51779 fp=56 tn=2195552 fn=5413
+[12:19:10.510] confusion matrix tp=54758 fp=5 tn=2910895 fn=3942
+[12:19:11.215] confusion matrix tp=39133 fp=5430 tn=3432982 fn=4055
+[12:19:11.735] confusion matrix tp=34034 fp=30098 tn=2492606 fn=3262
+[12:19:12.336] confusion matrix tp=24314 fp=26518 tn=2914596 fn=4172
+[12:19:12.765] confusion matrix tp=54068 fp=16 tn=2195391 fn=3325
+[12:19:13.239] confusion matrix tp=19856 fp=16408 tn=2420569 fn=767
+[12:19:13.663] confusion matrix tp=24551 fp=5888 tn=2212642 fn=9719
+[12:19:14.085] confusion matrix tp=9002 fp=14658 tn=2225645 fn=3495
+[12:19:14.661] confusion matrix tp=30434 fp=14259 tn=2920780 fn=4127
+[12:19:15.362] confusion matrix tp=34519 fp=13653 tn=3429759 fn=3669
+[12:19:15.791] confusion matrix tp=54477 fp=169 tn=2195281 fn=2873
+[12:19:16.234] confusion matrix tp=57153 fp=17 tn=2192840 fn=2790
+[12:19:16.657] confusion matrix tp=20375 fp=85 tn=1959481 fn=7259
+[12:19:17.088] confusion matrix tp=35560 fp=15 tn=2213479 fn=3746
+[12:19:17.562] confusion matrix tp=37475 fp=10 tn=2416086 fn=4029
+[12:19:17.993] confusion matrix tp=49253 fp=72 tn=2200967 fn=2508
+[12:19:18.421] confusion matrix tp=53953 fp=9 tn=2195755 fn=3083
+[12:19:18.901] confusion matrix tp=31581 fp=6268 tn=2414662 fn=5089
+[12:19:19.381] confusion matrix tp=35100 fp=92 tn=2419275 fn=3133
+[12:19:19.854] confusion matrix tp=35109 fp=480 tn=2418628 fn=3383
+[12:19:20.337] confusion matrix tp=36991 fp=11 tn=2417150 fn=3448
+[12:19:20.773] confusion matrix tp=56824 fp=3 tn=2192160 fn=3813
+[12:19:21.194] confusion matrix tp=8683 fp=12310 tn=1965325 fn=882
+[12:19:21.666] confusion matrix tp=35926 fp=13 tn=2418077 fn=3584
+[12:19:22.098] confusion matrix tp=50033 fp=68 tn=2195132 fn=7567
+[12:19:22.536] confusion matrix tp=54257 fp=14 tn=2195461 fn=3068
+[12:19:22.983] confusion matrix tp=49894 fp=18 tn=2199970 fn=2918
+[12:19:23.460] confusion matrix tp=35860 fp=8142 tn=2410954 fn=2644
+[12:19:23.945] confusion matrix tp=35534 fp=6200 tn=2413613 fn=2253
+[12:19:24.386] confusion matrix tp=57997 fp=73 tn=2191166 fn=3564
+[12:19:24.807] confusion matrix tp=21408 fp=2643 tn=1959816 fn=3333
+[12:19:25.244] confusion matrix tp=35555 fp=182 tn=2213260 fn=3803
+[12:19:25.680] confusion matrix tp=31687 fp=6 tn=2216327 fn=4780
+[12:19:26.140] confusion matrix tp=10555 fp=6438 tn=2142019 fn=988
+[12:19:26.590] confusion matrix tp=30885 fp=1970 tn=2123763 fn=3382
+[12:19:27.054] confusion matrix tp=31871 fp=0 tn=2216397 fn=4532
+[12:19:27.154] confusion matrix tp=41780 fp=6322 tn=973661 fn=2237
+[12:19:27.611] confusion matrix tp=35207 fp=81 tn=2121313 fn=3399
+[12:19:28.223] confusion matrix tp=70105 fp=192 tn=2998038 fn=3665
+[12:19:28.846] confusion matrix tp=69192 fp=133 tn=2999106 fn=3569
+[12:19:29.524] confusion matrix tp=67947 fp=112 tn=3307066 fn=4075
+[12:19:29.606] confusion matrix tp=9212 fp=1843 tn=294731 fn=454
+[12:19:30.220] confusion matrix tp=71112 fp=743 tn=2997170 fn=2975
+[12:19:30.901] confusion matrix tp=70739 fp=502 tn=3304806 fn=3153
+[12:19:31.516] confusion matrix tp=68992 fp=521 tn=2999511 fn=2976
+[12:19:31.599] confusion matrix tp=28676 fp=1017 tn=785563 fn=1384
+[12:19:32.050] confusion matrix tp=48333 fp=193 tn=2029459 fn=2015
+[12:19:32.549] confusion matrix tp=48309 fp=80 tn=2506833 fn=4778
+[12:19:33.057] confusion matrix tp=54082 fp=71 tn=2501829 fn=4018
+[12:19:33.448] confusion matrix tp=51959 fp=522 tn=1993262 fn=2257
+[12:19:33.902] confusion matrix tp=50550 fp=231 tn=2027158 fn=2061
+[12:19:34.310] confusion matrix tp=53000 fp=375 tn=1991973 fn=2652
+[12:19:34.744] confusion matrix tp=41169 fp=157 tn=2208506 fn=2968
+[12:19:35.181] confusion matrix tp=37166 fp=40 tn=2210342 fn=5252
+[12:19:35.611] confusion matrix tp=35124 fp=220 tn=2210430 fn=7026
+[12:19:36.052] confusion matrix tp=37640 fp=99 tn=2208887 fn=6174
+[12:19:36.532] confusion matrix tp=40796 fp=363 tn=2414282 fn=2159
+[12:19:36.968] confusion matrix tp=39929 fp=158 tn=2207153 fn=5560
+[12:19:37.453] confusion matrix tp=39592 fp=388 tn=2415422 fn=2198
+[12:19:37.456] evaluation metric dice mean: 0.9092722426395159
+[12:19:37.456] evaluation metric dice std: 0.11829203573140491
+[12:19:37.456] evaluation metric iou mean: 0.8500635261471207
+[12:19:37.456] evaluation metric iou std: 0.15427813528802553
+[12:19:37.460] evaluation metric dice: tensor([0.9093], device='cuda:0')
+[12:19:37.460] evaluation metric iou: tensor([0.8501], device='cuda:0')
+[12:19:37.460] stacks with a fragmented slice: 139 / 222
+[12:19:37.460] stacks with frac_slices_multi > 0.05: 114 / 222
+[12:19:37.461] frac_slices_multi mean: 0.10810628128586698
+[12:19:37.461] frac_slices_multi std: 0.15846933937957208
+[12:19:37.461] worst slice component count: 30
+[12:19:37.461] confusion matrix summed over 222 volumes (foreground = brain):
+[12:19:37.461]                      pred bg           pred fg
+[12:19:37.461]    true bg         524332736            464917
+[12:19:37.461]    true fg            978759           9673487
+[12:19:37.461] voxel-weighted sensitivity: 0.9081171154975891
+[12:19:37.461] voxel-weighted specificity: 0.9991140961647034
+[12:19:37.461] voxel-weighted precision: 0.9541429877281189
+[12:19:37.461] voxel-weighted f1 score: 0.9305612859626803
+[12:19:37.462] per-volume mean sensitivity: 0.8961926698684692
+[12:19:37.462] per-volume mean specificity: 0.9990033507347107
+[12:19:37.462] per-volume mean precision: 0.9361368417739868
+[12:19:37.462] per-volume mean f1 score: 0.9092721939086914
+[12:19:37.463] latency mean: 0.01073011567396147
+[12:19:37.463] latency std: 0.0014303449344021636
