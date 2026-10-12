@@ -30,29 +30,35 @@ The pretrained Fetal-BET Attention U-Net is fine-tuned with this augmentation (P
 
 ## Results
 
-Mean Dice, released Fetal-BET vs. fine-tuned model (epoch 48):
+**CHUV data:** mean Dice, released Fetal-BET vs. fine-tuned model (epoch 48):
 
 | Test set | Stacks | Fetal-BET | Fine-tuned |
 |---|---:|---:|---:|
 | CHUV, simulated echo times | 1,296 | 0.785 | **0.881** |
 | CHUV, original echo | 222 | 0.910 | 0.909 |
-| Low-field 0.55T, multi-echo | 63 | 0.579 | **0.673** |
-| High-field, multi-echo | 48 | – | 0.914 |
 
 <p align="center">
   <img src="src/results_mariem/figures/breakdown_fig1_dice_vs_echo.png" width="90%"><br>
   <em>Dice by echo time. At low field and long TE (TE3), Fetal-BET almost fails completely, while the fine-tuned model recovers a large part of the segmentation.</em>
 </p>
 
-<p align="center">
-  <img src="src/figures/paired_dice_by_field.png" width="80%"><br>
-  <em>Subject-level paired comparison. At low field, Dice improves by +0.077 (95% CI [0.011, 0.144], p = 0.029, n = 7). At high field, the change is not significant.</em>
-</p>
+**Multi-echo test sets: high field vs. low field**
+
+| Field | Model | Dice | Fragmentation | Dice < 0.5 |
+|---|---|---:|---:|---:|
+| High field (48 volumes, 6 subjects) | Fetal-BET | 0.900 ± 0.129 <sup>ref</sup> | 0.168 ± 0.155 | 2/48 (4.2%) |
+| | Fine-tuned (ep 48) | 0.914 ± 0.037 <sup>ns</sup> | **0.090 ± 0.072** | **0/48 (0.0%)** |
+| Low field 0.55T (63 volumes, 7 subjects) | Fetal-BET | 0.579 ± 0.365 <sup>ref</sup> | 0.348 ± 0.226 | 24/63 (38.1%) |
+| | Fine-tuned (ep 48) | **0.673 ± 0.220** <sup>*</sup> | 0.429 ± 0.298 | **12/63 (19.0%)** |
+
+*Mean ± std across test volumes. Fragmentation is the fraction of slices whose mask contains more than one connected component. Dice is compared with Fetal-BET using a subject-level paired t-test: Dice is averaged within each subject first, so each subject contributes one paired observation. <sup>*</sup> p < 0.05, <sup>ns</sup> not significant, <sup>ref</sup> reference model.*
 
 **Key findings**
 - The largest gain is at **long echo times and low field**, exactly where the contrast shift is strongest.
+- At low field, Dice improves significantly (p < 0.05) and the number of failed volumes (Dice < 0.5) is **halved**, from 38% to 19%.
+- At high field, Dice is unchanged but **much more stable** (std 0.129 → 0.037), with no failed volumes and half the fragmentation.
 - Performance on standard (original-echo) data is **preserved**.
-- There is a trade-off: at short echo times on low-field data, the fine-tuned model is slightly below Fetal-BET, which motivates further work on balancing the augmentation.
+- There is a trade-off: at short echo times on low-field data, the fine-tuned model is slightly below Fetal-BET, and low-field masks are more fragmented, which motivated the hole-filling regulariser and further work on balancing the augmentation.
 
 The masks produced by this pipeline serve as input to a joint multi-echo slice-to-volume reconstruction.
 
