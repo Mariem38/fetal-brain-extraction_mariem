@@ -1,92 +1,128 @@
-# Fetal-BET: Brain Extraction Tool for Fetal MRI
+# Echo-Time-Robust Fetal Brain Extraction with Physics-Based Contrast Augmentation
 
-Welcome to the Fetal-BET (Fetal Brain Extraction Tool) repository! 
-We've developed a powerful deep learning-based solution for automatic
-fetal brain extraction in MRI scans. Our method, built on a vast dataset
-of 72,000 images, excels in extracting fetal brain structures from diverse
-MRI sequences and scanning conditions. It's fast, accurate, and adaptable. 
+Summer lab immersion, **CHUV Medical Image Analysis Laboratory (MIAL)**, July–August 2026
+Mariem Maazoun, MSc Life Sciences Engineering, EPFL
 
-## Sample MRI segmentation result using our methods.
+This repository is a fork of [Fetal-BET](https://github.com/bchimagine/fetal-brain-extraction), a deep-learning tool for fetal brain extraction in MRI. It extends Fetal-BET to make brain extraction **robust to changes in echo time (TE) and field strength**, including low-field 0.55T acquisitions.
 
-[![Watch the video](./src/figures/combined_image_stacks.gif)](./src/figures/combined_image_stacks.gif)
+---
 
-![Example Segmentation Result](./src/figures/examples.png)
+## Motivation
 
+Fetal-BET was trained on standard T2-weighted scans. Its intensity augmentation is limited to noise, bias field and smoothing, so the model never learned to handle changes in **tissue contrast**. When the echo time changes (for example in multi-echo or low-field acquisitions), brain/background contrast shifts and segmentation quality drops sharply.
 
-## Table of Contents
-- [Features](#features)
-- [Installation](#installation)
-  - [Requirements](#requirements)
-  - [Docker](#docker)
-- [Usage](#usage)
-  - [Training](#training)
-  - [Inference](#inference)
-- [Dataset](#dataset)
-- [License](#license)
-- [Acknowledgments](#acknowledgments)
+## Method
 
-## Features
+**1. Physics-based contrast augmentation.**
+Tissue T2 values are estimated from multi-echo data, and real training images are **re-simulated at arbitrary echo times** using the MR signal model. The augmentation is applied to the physical signal, before intensity normalisation, so the model sees realistic contrast variations during training. *(The simulation module is developed in a separate repository.)*
 
-- Implementation of various state-of-the-art segmentation architectures.
-- Docker support for reproducibility.
-- Comprehensive evaluation scripts.
-- Sample Jupyter notebooks for interactive experimentation. (will be added)
+**2. Fine-tuning.**
+The pretrained Fetal-BET Attention U-Net is fine-tuned with this augmentation (PyTorch / MONAI). The training script was extended with:
+- validation Dice tracked separately for each **field strength and echo**, rather than pooled,
+- a stopping rule relative to the baseline checkpoint,
+- an optional **hole-filling regulariser** with per-epoch diagnostics and gradient-ratio calibration of its weight,
+- checkpointing and Weights & Biases logging.
 
-## Installation
+**3. Extended evaluation (`src/codes/test.py`).**
+- confusion-matrix metrics: sensitivity, specificity, precision and F1, both voxel-pooled and averaged per volume,
+- **fragmentation scores**, which count disconnected components per slice to detect anatomically implausible masks,
+- per-subject analysis with **paired t-tests and 95% confidence intervals**.
 
-### Requirements
+## Results
 
-- Python 3.8+
-- Docker 20.10+ (optional but recommended)
+Mean Dice, released Fetal-BET vs. fine-tuned model (epoch 48):
 
-```bash
-# Clone the repository
-git clone git@github.com:bchimagine/fetal-brain-extraction.git
-cd fetal-brain-extraction
+| Test set | Stacks | Fetal-BET | Fine-tuned |
+|---|---:|---:|---:|
+| CHUV, simulated echo times | 1,296 | 0.785 | **0.881** |
+| CHUV, original echo | 222 | 0.910 | 0.909 |
+| Low-field 0.55T, multi-echo | 63 | 0.579 | **0.673** |
+| High-field, multi-echo | 48 | – | 0.914 |
 
-# Install Python dependencies
-pip install -r requirements.txt
+<p align="center">
+  <img src="src/results_mariem/figures/breakdown_fig1_dice_vs_echo.png" width="90%"><br>
+  <em>Dice by echo time. At low field and long TE (TE3), Fetal-BET almost fails completely, while the fine-tuned model recovers a large part of the segmentation.</em>
+</p>
+
+<p align="center">
+  <img src="src/figures/paired_dice_by_field.png" width="80%"><br>
+  <em>Subject-level paired comparison. At low field, Dice improves by +0.077 (95% CI [0.011, 0.144], p = 0.029, n = 7). At high field, the change is not significant.</em>
+</p>
+
+**Key findings**
+- The largest gain is at **long echo times and low field**, exactly where the contrast shift is strongest.
+- Performance on standard (original-echo) data is **preserved**.
+- There is a trade-off: at short echo times on low-field data, the fine-tuned model is slightly below Fetal-BET, which motivates further work on balancing the augmentation.
+
+The masks produced by this pipeline serve as input to a joint multi-echo slice-to-volume reconstruction.
+
+---
+
+## Repository structure
+
 ```
-### Docker
-```bash
-# Pull the Docker Image
-docker pull faghihpirayesh/fetal-bet
+src/
+├── codes/
+│   ├── train.py                 # Fine-tuning with per-echo validation and hole regulariser
+│   ├── test.py                  # Extended evaluation (confusion matrix, fragmentation)
+│   ├── inference.py             # Brain extraction on new data
+│   ├── data_generator_monai.py
+│   └── model_zoo.py
+├── configs/                     # Training and test configurations
+├── figures/                     # Statistical analysis figures
+└── results_mariem/
+    ├── figures/                 # Result figures
+    └── runs/                    # Per-volume metrics (CSV) and test logs
+```
+
+## Environment
+
+```
+Python 3.10
+
+torch
+torchvision
+monai==1.2.0
+numpy
+scipy
+pandas
+nibabel
+SimpleITK
+scikit-image
+scikit-learn
+matplotlib
+seaborn
+tqdm
+pyyaml
+wandb
 ```
 
 ## Usage
 
-### Training
+**Fine-tuning**
 ```bash
-# To train a model on your own dataset, you can use the train.py script. Here's an example command:
-python train.py --dataset /path/to/dataset --model unet --epochs 50
-```
-### Inference
-```bash
-# For inference on new data, use the inference.py script. Here's an example:
-python inference.py --input /path/to/input.nii.gz --output /path/to/output.nii.gz --model saved_models/attunet.pth
-
-# Once you have pulled the image, you can run it as a Docker container. Below is an example command:
-docker run -v /path/to/host/data:/path/in/container fetal-bet \
-  --data_path /path/in/container/dataset/ \
-  --save_path /path/in/container/prediction
+cd src/codes
+python train.py --cfg ../configs/train_configs.yml
 ```
 
-## Dataset
-In this study, our dataset comprises fetal MRI data obtained over a span of approximately 20 years from Boston Children's Hospital. These MRI acquisitions encompassed various MRI scanner types, including 1.5T GE, Philips, Siemens, and 3T Siemens scanners, specifically Skyra, Prisma, and Vida models. Ethical approval was obtained from the Institutional Review Board, and informed consent was secured from all participants for prospective fetal MRIs.
+**Evaluation**
+```bash
+python test.py --cfg ../configs/test_configs.yml
+```
 
-The MRI acquisition protocols included the acquisition of multiple types of images, such as T2-weighted (T2W) 2D sequences with in-plane resolutions ranging from 1 to 1.25 mm, diffusion-weighted imaging (DWI) with an in-plane resolution of 2 mm, and functional MRI (fMRI) images with an isotropic resolution of 2-3 mm.
+**Inference on new data**
+```bash
+python inference.py --data_path /path/to/data --save_path /path/to/predictions --saved_model_path /path/to/model.pth
+```
 
-Fully anonymized (de-identified) datasets presented in this study will be made available upon reasonable request. Please direct any requests for dataset access to "ali.gholipour@uci.edu".
+Data paths in the configuration files must be adapted to your setup. Clinical data is not included in this repository.
 
-## Disclaimer
-This software and any included data were developed for research purposes and are not intended for medical or diagnostic use and have no warranty. The authors and distributors do not make any guarantees regarding the accuracy or usefulness of results generated from these tools or their derivatives, and are not liable for any damages resulting from their use.
+---
 
-## Acknowledgement
-This research was supported in part by the National Institute of Biomedical Imaging and Bioengineering, the National Institute of Neurological Disorders and Stroke, and Eunice Kennedy Shriver National Institute of Child Health and Human Development of the National Institutes of Health (NIH) under award numbers R01NS106030, R01EB018988, R01EB031849, R01EB032366, and R01HD109395; and in part by the Office of the Director of the NIH under award number S10OD025111. This research was also partly supported by NVIDIA Corporation and utilized NVIDIA RTX A6000 and RTX A5000 GPUs. The content of this publication is solely the responsibility of the authors and does not necessarily represent the official views of the NIH, NSF, or NVIDIA.
+## Acknowledgements
 
-This work is licensed under a Creative Commons Attribution 4.0 International License
+Based on **Fetal-BET** by Faghihpirayesh et al. (licensed under CC BY 4.0):
 
-## Citation
 ```bibtex
 @article{faghihpirayesh2024fetal,
   title={Fetal-bet: Brain extraction tool for fetal mri},
@@ -95,3 +131,8 @@ This work is licensed under a Creative Commons Attribution 4.0 International Li
   year={2024},
   publisher={IEEE}
 }
+```
+
+Work carried out at the Medical Image Analysis Laboratory (MIAL), CHUV, Lausanne.
+
+*For research purposes only; not intended for clinical or diagnostic use.*
